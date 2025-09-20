@@ -3,29 +3,37 @@ import { Note } from "@/types/note";
 import { RegisterRequest, LoginRequest, SessionResponse } from "@/types/auth";
 import { cookies } from "next/headers";
 import { nextServer } from "./api";
-import { isAxiosError } from "axios";
+import { isAxiosError, AxiosRequestConfig } from "axios";
 
 const DEFAULT_TAGS = ["Todo", "Personal", "Work", "Shopping", "Meeting"];
 
-// Отримання cookie для серверних запитів
-export async function getAuthHeaders(): Promise<{
-  headers: { Cookie: string };
-}> {
+// Генерація cookie-хедерів
+
+async function getAuthHeaders() {
   const cookieStore = await cookies();
   const cookieString = cookieStore
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
-  return { headers: { Cookie: cookieString } };
+  return { Cookie: cookieString };
 }
 
-// Універсальна обгортка для обробки запитів
-async function handleRequest<T>(
-  promise: Promise<{ data: T }>,
-  defaultError: string
+// Універсальний обробник запитів
+
+async function request<T>(
+  method: "get" | "post" | "patch" | "delete",
+  url: string,
+  options: AxiosRequestConfig = {},
+  defaultError = "Request failed"
 ): Promise<T> {
   try {
-    const { data } = await promise;
+    const headers = await getAuthHeaders();
+    const { data } = await nextServer.request<T>({
+      method,
+      url,
+      headers,
+      ...options,
+    });
     return data;
   } catch (error) {
     if (isAxiosError(error)) {
@@ -35,55 +43,30 @@ async function handleRequest<T>(
   }
 }
 
-// Авторизація
-export const registerServer = async (data: RegisterRequest) =>
-  handleRequest(
-    nextServer.post<User>("/auth/register", data, await getAuthHeaders()),
-    "Registration failed"
-  );
+// ==== AUTH ====
 
-export const loginServer = async (data: LoginRequest) =>
-  handleRequest(
-    nextServer.post<User>("/auth/login", data, await getAuthHeaders()),
-    "Login failed"
-  );
+export const registerServer = (data: RegisterRequest) =>
+  request<User>("post", "/auth/register", { data }, "Registration failed");
 
-export const logoutServer = async () =>
-  handleRequest(
-    nextServer.post("/auth/logout", {}, await getAuthHeaders()),
-    "Logout failed"
-  );
+export const loginServer = (data: LoginRequest) =>
+  request<User>("post", "/auth/login", { data }, "Login failed");
 
-export const checkSession = async () => {
-  try {
-    const response = await nextServer.get<SessionResponse>(
-      "/auth/session",
-      await getAuthHeaders()
-    );
-    return response;
-  } catch (error) {
-    if (isAxiosError(error)) {
-      throw new Error(error.response?.data?.message || "Session check failed");
-    }
-    throw new Error("Session check failed");
-  }
-};
+export const logoutServer = () =>
+  request<void>("post", "/auth/logout", {}, "Logout failed");
 
-// Користувач
-export const getUserProfile = async () =>
-  handleRequest(
-    nextServer.get<User>("/users/me", await getAuthHeaders()),
-    "Unauthorized"
-  );
+export const checkSession = () =>
+  request<SessionResponse>("get", "/auth/session", {}, "Session check failed");
 
-export const updateUser = async (update: Partial<{ username: string }>) =>
-  handleRequest(
-    nextServer.patch<User>("/users/me", update, await getAuthHeaders()),
-    "Update failed"
-  );
+// ==== USERS ====
+export const getUserProfile = () =>
+  request<User>("get", "/users/me", {}, "Unauthorized");
 
-// Нотатки
-export const fetchNotes = async (
+export const updateUser = (update: Partial<Pick<User, "username">>) =>
+  request<User>("patch", "/users/me", { data: update }, "Update failed");
+
+// ==== NOTES ====
+
+export const fetchNotes = (
   search = "",
   page = 1,
   perPage = 12,
@@ -96,34 +79,19 @@ export const fetchNotes = async (
   if (search) params.search = search;
   if (tag && tag.toLowerCase() !== "all") params.tag = tag;
 
-  return handleRequest(
-    nextServer.get("/notes", { ...(await getAuthHeaders()), params }),
-    "Fetching notes failed"
-  );
+  return request("get", "/notes", { params }, "Fetching notes failed");
 };
 
-export const fetchNoteById = async (id: string) =>
-  handleRequest(
-    nextServer.get<Note>(`/notes/${id}`, await getAuthHeaders()),
-    "Fetching note failed"
-  );
+export const fetchNoteById = (id: string) =>
+  request<Note>("get", `/notes/${id}`, {}, "Fetching note failed");
 
-export const deleteNote = async (id: string) =>
-  handleRequest(
-    nextServer.delete<Note>(`/notes/${id}`, await getAuthHeaders()),
-    "Deleting note failed"
-  );
+export const deleteNote = (id: string) =>
+  request<Note>("delete", `/notes/${id}`, {}, "Deleting note failed");
 
-// Теги
+// ==== TAGS ====
+
 export const getTags = async (): Promise<string[]> => {
-  try {
-    const res = await fetchNotes();
-    const tagsFromNotes = res.notes.map((note) => note.tag);
-    return Array.from(new Set([...DEFAULT_TAGS, ...tagsFromNotes]));
-  } catch (error) {
-    if (isAxiosError(error)) {
-      throw new Error(error.response?.data?.message || "Fetching tags failed");
-    }
-    throw new Error("Fetching tags failed");
-  }
+  const { notes } = await fetchNotes();
+  const tagsFromNotes = notes.map((note) => note.tag);
+  return Array.from(new Set([...DEFAULT_TAGS, ...tagsFromNotes]));
 };

@@ -1,13 +1,13 @@
+"use client"
+
 import css from "./Header.module.css";
 
 import Link from "next/link";
 
-import { getTags } from "@/lib/api";
 import TagsMenu from "../TagsMenu/TagsMenu";
+import AuthNavigation from "../AuthNavigation/AuthNavigation";
 
-const Header = async () => {
-  const tags = await getTags();
-
+export default function Header(){
   return (
     <header className={css.header}>
       <Link href="/" aria-label="Home">
@@ -19,7 +19,7 @@ const Header = async () => {
             <Link href="/">Home</Link>
           </li>
           <li>
-            <TagsMenu tags={tags} />
+            <TagsMenu />
           </li>
         </ul>
       </nav>
@@ -27,4 +27,4 @@ const Header = async () => {
   );
 };
 
-export default Header;
+

@@ -1,5 +1,5 @@
 import css from "./createNote.module.css";
-import { getTags } from "@/lib/api";
+import { getTags } from "@/lib/api/serverApi";
 import {
   dehydrate,
   HydrationBoundary,
@@ -30,7 +30,12 @@ export default async function CreateNote() {
   const queryClient = new QueryClient();
 
   const dehydratedState = dehydrate(queryClient);
-
+  
+  await queryClient.prefetchQuery({
+    queryKey: ["tags"],
+    queryFn: getTags,
+  });
+  
   return (
     <main className={css.main}>
       <div className={css.container}>

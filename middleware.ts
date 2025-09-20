@@ -14,10 +14,10 @@ export async function middleware(req: NextRequest) {
   const isPrivate = PRIVATE_ROUTES.some((route) => pathname.startsWith(route));
 
   const sessionValid = !!accessToken;
-
+  
   if (!accessToken && refreshToken) {
     try {
-      const { data: newTokens } = await checkSession();
+      const newTokens = await checkSession();
 
       const res = NextResponse.next();
 

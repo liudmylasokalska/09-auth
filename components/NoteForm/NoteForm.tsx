@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import css from "./NoteForm.module.css";
 import { useRouter } from "next/navigation";
 import { useNoteStore } from "@/lib/store/noteStore";
-import { createNote } from "@/lib/api";
+import { createNote } from "@/lib/api/clientApi";
 import type { Note } from "../../types/note";
 
 interface FormValues {
@@ -13,15 +13,6 @@ interface FormValues {
   tag: string;
 }
 
-const initialFormValues: FormValues = {
-  title: "",
-  content: "",
-  tag: "Todo",
-};
-
-interface NoteFormProps {
-  onCancel: () => void;
-}
 export default function NoteForm({ tags }: { tags: string[] }) {
   const queryClient = useQueryClient();
   const router = useRouter();

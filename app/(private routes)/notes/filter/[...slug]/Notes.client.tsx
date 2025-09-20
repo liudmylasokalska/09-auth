@@ -8,7 +8,7 @@ import Pagination from "@/components/Pagination/Pagination";
 import Link from "next/link";
 import NoteList from "@/components/NoteList/NoteList";
 import Loader from "@/app/loading";
-import { fetchNotes, FetchNotesResponse } from "@/lib/api";
+import { fetchNotesClient, FetchNotesResponse } from "@/lib/api/clientApi";
 
 import css from "./Notes.page.module.css";
 
@@ -20,11 +20,10 @@ export default function NotesClient({ tag }: NotesClientProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 500);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
+ 
   const { data, isFetching, isError, error } = useQuery<FetchNotesResponse>({
     queryKey: ["notes", debouncedSearch, page, tag],
-    queryFn: () => fetchNotes(debouncedSearch, page, 9, tag),
+    queryFn: () => fetchNotesClient(debouncedSearch, page, 9, tag),
     placeholderData: (prev) => prev,
   });
 

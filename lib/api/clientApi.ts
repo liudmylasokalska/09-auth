@@ -13,7 +13,6 @@ export interface FetchNotesResponse {
 
 const DEFAULT_TAGS = ["Todo", "Personal", "Work", "Shopping", "Meeting"];
 
-// Універсальна обгортка для запитів
 async function handleRequest<T>(
   promise: Promise<{ data: T }>,
   defaultError: string
@@ -23,8 +22,7 @@ async function handleRequest<T>(
     return data;
   } catch (err: unknown) {
     if (isAxiosError(err)) {
-      //типізація response.data
-      const apiMessage =
+          const apiMessage =
         err.response?.data &&
         typeof (err.response.data as { message?: unknown }).message === "string"
           ? (err.response.data as { message: string }).message
@@ -36,7 +34,6 @@ async function handleRequest<T>(
   }
 }
 
-// Авторизація
 export const registerClient = (data: RegisterRequest): Promise<User> =>
   handleRequest(
     nextServer.post<User>("/auth/register", data),
@@ -52,7 +49,6 @@ export const logoutClient = (): Promise<void> =>
 export const checkSession = (): Promise<void> =>
   handleRequest(nextServer.get("/auth/session"), "Session check failed");
 
-// Користувач
 export const getUserProfile = (): Promise<User> =>
   handleRequest(nextServer.get<User>("/users/me"), "Unauthorized");
 
@@ -61,7 +57,6 @@ export const updateUser = (
 ): Promise<User> =>
   handleRequest(nextServer.patch<User>("/users/me", update), "Update failed");
 
-// Нотатки
 export const fetchNotesClient = (
   search = "",
   page = 1,
@@ -96,8 +91,7 @@ export const deleteNoteClient = (id: string): Promise<Note> =>
     nextServer.delete<Note>(`/notes/${id}`),
     "Deleting note failed"
   );
-
-// Теги
+  
 export const getTagsClient = async (): Promise<string[]> => {
   try {
     const res = await fetchNotesClient();
