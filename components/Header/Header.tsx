@@ -21,6 +21,7 @@ export default function Header(){
           <li>
             <TagsMenu />
           </li>
+          <AuthNavigation />
         </ul>
       </nav>
     </header>

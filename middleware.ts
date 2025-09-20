@@ -14,10 +14,10 @@ export async function middleware(req: NextRequest) {
   const isPrivate = PRIVATE_ROUTES.some((route) => pathname.startsWith(route));
 
   const sessionValid = !!accessToken;
-  
+
   if (!accessToken && refreshToken) {
     try {
-      const newTokens = await checkSession();
+      const { data: newTokens } = await checkSession();
 
       const res = NextResponse.next();
 
@@ -44,9 +44,12 @@ export async function middleware(req: NextRequest) {
       return res;
     }
   }
+
   if (!sessionValid && isPrivate) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
+
+ 
   if (sessionValid && isPublic) {
     return NextResponse.redirect(new URL("/", req.url));
   }
